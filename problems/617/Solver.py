@@ -3,47 +3,50 @@ from math import log2
 LOGGING = True
 
 class Solver:
+    def __init__(self):
+        self.tub = set()
+
     def d(self, n):
-        return self.c(n) + 1 # Why have I missed one?!! Oh well
+        # n += 10
+        extremes = self.generate_extremes(n)
+        return sum(self.count_by_extreme(extreme, n) for extreme in extremes)
 
-    # Number of (n,e) MPS for some E
-    def c(self, n):
-        return sum(self.find_number_of_mpses(i, e) for i in range(6, n) for e in range(2, int(log2(n))))
+    def generate_extremes(self, n):
+        extremes = []
+        for i in range(1, int(log2(n)) + 1):
+            for e in range(2, int(log2(n) ** (1 / i)) + 1):
+                a = int(n ** (1 / (e ** i)))
+                extremes.append((i, e, a))
+        return extremes
 
-    # Number of (n,e) MPS
-    def find_number_of_mpses(self, n, e):
-        integer_under_root = int(n ** (1/e))
-        sequence = []
-        # future improvement: iterate over squares...
-        jump_up_destination = integer_under_root ** e
-        jump_down_destination = n - jump_up_destination
-        if jump_down_destination < 2:
+    def count_by_extreme(self, extreme, n):
+        k = extreme[0]
+        e = extreme[1]
+        a = extreme[2]
+        return sum(self.get_answers(a, e, k, n, t) for t in range(k))
+
+    def get_answers(self, a, e, k, n, t):
+        test = a + a ** (e ** k)
+        while test > n and a > 1:
+            a -= 1
+            test = a + a ** (e ** k)
+
+        j = t
+        # you've got your result right here!
+        if a <= 1:
             return 0
-        current_a = jump_down_destination
-        sequence.append(current_a)
-        if current_a == integer_under_root:
-            num_of_sequences = self.get_number_of_full_sequences_from_base_sequence(e, sequence)
-            if LOGGING:
-                print("Found a ({},{}) base sequence: {}. With {} starting points".format(n, e, sequence, num_of_sequences))
-            return num_of_sequences
-        while current_a < integer_under_root:
-            current_a = current_a ** e
-            sequence.append(current_a)
-        if current_a == integer_under_root:
-            num_of_sequences = self.get_number_of_full_sequences_from_base_sequence(e, sequence)
-            if LOGGING:
-                print("Found a ({},{}) base sequence: {}. With {} starting points".format(n, e, sequence, num_of_sequences))
-            return num_of_sequences
+        if a ** (e ** j) + a ** (e ** k) > n:
+            return 0
         else:
-            return 0
+            # have a working equation!
 
-    # Number of (n,e) MPS for a given base sequence
-    def get_number_of_full_sequences_from_base_sequence(self, e, sequence):
-        first_member = sequence[0]
-        return len(sequence) + self.number_of_lower_roots(first_member, e, 0)
 
-    def number_of_lower_roots(self, num, e, total_already):
-        putative_root = int(num ** (1/e))
-        if putative_root ** 2 == num:
-            return self.number_of_lower_roots(putative_root, e, total_already + 1)
-        return total_already
+            # for z in range(k - j):
+            #     for y in range (2, a + 1):
+            #         to_add = (y ** (e ** j) + y ** (e ** k), e, y ** (e ** z))
+            #         self.tub.add(to_add)
+            # want case where a = 2 e = 2 j = 2: don't count starting on 4 please
+            print(j)
+            ways = (a - 2 + 1) * min(k - j, 2)
+
+            return ways
