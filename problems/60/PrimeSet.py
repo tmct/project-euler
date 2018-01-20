@@ -46,16 +46,15 @@ class Solver:
 
         self.k_cliques = ([], self.primes, [], [], [], [])
         # for p in generate_primes():
-        self.generate_1_2_cliques(number_of_primes)
-        self.generate_3_4_5_cliques()
+        self.generate_1_2_3_cliques(number_of_primes)
+        self.generate_4_5_cliques()
         print([len(i) for i in self.k_cliques])
         print(self.k_cliques[5])
 
         print("time elapsed: {:.2f}s".format(time.time() - start_time))
 
-    def generate_3_4_5_cliques(self):
+    def generate_4_5_cliques(self):
         # split for profiling :)
-        self.generate_3_cliques()
         self.generate_4_cliques()
         self.generate_5_cliques()
 
@@ -83,14 +82,21 @@ class Solver:
                     new_clique = c1.union(d2)
                     self.k_cliques[i].append(new_clique)
 
-    def generate_1_2_cliques(self, number_of_primes):
+    def generate_1_2_3_cliques(self, number_of_primes):
+        primes_compat_with = {}
         for p in islice(generate_primes(), number_of_primes):
+            primes_compat_with_p = set()
             for q in self.primes:
                 if primes_are_compatible(p, q):
+                    primes_compat_with_p.add(q)
                     self.k_cliques[2].append(frozenset((p, q)))
+                    for r in primes_compat_with[q].intersection(primes_compat_with_p):
+                        three_clique = frozenset((p, q, r))
+                        self.k_cliques[3].append(three_clique)
             self.primes.append(p)
+            primes_compat_with[p] = primes_compat_with_p
 
 
 if __name__ == '__main__':
-    # Solver().solve(100)
-    cProfile.run('Solver().solve(700)')
+    # Solver().solve(1500)
+    cProfile.run('Solver().solve(1500)')
